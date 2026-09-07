@@ -1,0 +1,6 @@
+export type StudioValue=string|number|boolean|null
+export interface StudioMaterial {id:string;name:string;family:string;properties?:Record<string,StudioValue>}
+export interface StudioMember {id:string;kind:'beam'|'column'|'slab'|'wall'|'brace'|'other';a?:number;b?:number;geometry:Record<string,StudioValue>;material?:StudioMaterial;results?:Record<string,StudioValue>;reinforcement?:string|null}
+export interface StudioFoundation {id:string;node:number;kind:'isolated_footing'|'strip_footing'|'raft'|'pile';geometry:Record<string,StudioValue>;actions:Record<string,StudioValue>;results:Record<string,StudioValue>;reinforcement?:string|null}
+export interface RJPStudioStructurePackage {schema:'RJP-STUDIO-STRUCTURE/1.0';source:{app:'SmartStruct RJP';version:string;exportedAt:string};project:Record<string,StudioValue>;nodes:Array<{id:number;x:number;y:number;z?:number}>;members:StudioMember[];foundations:StudioFoundation[];steelSchedule:any[];notes:string[]}
+export function downloadStudioPackage(data:RJPStudioStructurePackage,base='SmartStruct'){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=`${base.replace(/\s+/g,'_')||'SmartStruct'}_RJP3D.rjp3d.json`;a.click();URL.revokeObjectURL(u)}
