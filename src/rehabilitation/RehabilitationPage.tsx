@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 type Tab = 'edificios' | 'levantamento' | 'diagnostico' | 'betao' | 'alvenarias' | 'pavimentos' | 'metalicas' | 'madeira' | 'pedra' | 'intervencao'
 type Severity = 'Baixa' | 'Moderada' | 'Elevada' | 'Crítica'
 type SurveyBase = {name:string; dataUrl:string; kind:'Planta'|'Alçado'|'Fotografia'}
+type RehabBimElement = { id:string; name?:string; type?:string }
 
 type Finding = {
   id: number
@@ -88,7 +89,7 @@ export default function RehabilitationPage(){
   const [draft,setDraft]=useState<Omit<Finding,'id'>>({element:'',anomaly:'',severity:'Moderada',note:'',category:'Fissura / fenda'})
   const [selectedFinding,setSelectedFinding]=useState<number|null>(null)
   const [surveyBase,setSurveyBase]=useState<SurveyBase|null>(null)
-  const bim=null
+  const bimElements: RehabBimElement[] = []
   useEffect(()=>{try{const raw=localStorage.getItem(REHAB_STORAGE_KEY);if(!raw)return;const x=JSON.parse(raw);if(x.project)setProject(x.project);if(Array.isArray(x.findings))setFindings(x.findings);if(x.surveyBase)setSurveyBase(x.surveyBase)}catch{}},[])
   useEffect(()=>{localStorage.setItem(REHAB_STORAGE_KEY,JSON.stringify({project,findings,surveyBase:surveyBase && surveyBase.dataUrl.length<1800000?surveyBase:null,updatedAt:new Date().toISOString()}))},[project,findings,surveyBase])
 
@@ -136,9 +137,9 @@ export default function RehabilitationPage(){
       <div className="rehab-findings">{findings.map(f=><article key={f.id} className={`sev-${f.severity.toLowerCase().replace('í','i')}`}><div><b>{f.element}</b><span>{f.anomaly}</span><small>{f.note}</small></div><strong>{f.severity}</strong><button onClick={()=>setFindings(v=>v.filter(x=>x.id!==f.id))}>×</button></article>)}</div></section>
     </>}
 
-    {tab==='levantamento' && <PathologySurvey findings={findings} setFindings={setFindings} draft={draft} setDraft={setDraft} selected={selectedFinding} setSelected={setSelectedFinding} bimElements={bim?.elements||[]} surveyBase={surveyBase} setSurveyBase={setSurveyBase} project={project} />}
+    {tab==='levantamento' && <PathologySurvey findings={findings} setFindings={setFindings} draft={draft} setDraft={setDraft} selected={selectedFinding} setSelected={setSelectedFinding} bimElements={bimElements} surveyBase={surveyBase} setSurveyBase={setSurveyBase} project={project} />}
 
-    {tab==='diagnostico' && <DiagnosisWorkflow findings={findings} bimElements={bim?.elements||[]} />}
+    {tab==='diagnostico' && <DiagnosisWorkflow findings={findings} bimElements={bimElements} />}
 
     {tab!=='edificios' && tab!=='levantamento' && tab!=='diagnostico' && tab!=='intervencao' && <MaterialPanel kind={tab} />}
 
@@ -158,7 +159,7 @@ export default function RehabilitationPage(){
   </div>
 }
 
-function PathologySurvey({findings,setFindings,draft,setDraft,selected,setSelected,bimElements,surveyBase,setSurveyBase,project}:{findings:Finding[];setFindings:React.Dispatch<React.SetStateAction<Finding[]>>;draft:Omit<Finding,'id'>;setDraft:React.Dispatch<React.SetStateAction<Omit<Finding,'id'>>>;selected:number|null;setSelected:(v:number|null)=>void;bimElements:any[];surveyBase:SurveyBase|null;setSurveyBase:(v:SurveyBase|null)=>void;project:{name:string;location:string;year:string;use:string;system:string}}){
+function PathologySurvey({findings,setFindings,draft,setDraft,selected,setSelected,bimElements,surveyBase,setSurveyBase,project}:{findings:Finding[];setFindings:React.Dispatch<React.SetStateAction<Finding[]>>;draft:Omit<Finding,'id'>;setDraft:React.Dispatch<React.SetStateAction<Omit<Finding,'id'>>>;selected:number|null;setSelected:(v:number|null)=>void;bimElements:RehabBimElement[];surveyBase:SurveyBase|null;setSurveyBase:(v:SurveyBase|null)=>void;project:{name:string;location:string;year:string;use:string;system:string}}){
   const located=findings.filter(f=>f.x!=null&&f.y!=null)
   function mark(ev:React.MouseEvent<SVGSVGElement>){const r=ev.currentTarget.getBoundingClientRect(),x=(ev.clientX-r.left)/r.width*100,y=(ev.clientY-r.top)/r.height*100,category=draft.category||'Outra';setFindings(v=>[...v,{id:Date.now(),element:draft.element||'Elemento em levantamento',anomaly:draft.anomaly||category,severity:draft.severity,note:draft.note,bimElementId:draft.bimElementId,x,y,category}])}
   function marker(f:Finding){const c=f.severity==='Crítica'?'#d35454':f.severity==='Elevada'?'#d47c39':f.severity==='Moderada'?'#d2a33b':'#5d9f7d';return <g key={f.id} className="pathology-marker" onClick={e=>{e.stopPropagation();setSelected(f.id)}}><circle cx={`${f.x}%`} cy={`${f.y}%`} r={selected===f.id?10:7} fill={c}/><text x={`${f.x}%`} y={`${(f.y||0)-2}%`}>{f.id.toString().slice(-2)}</text></g>}
@@ -180,7 +181,7 @@ const diagnosisRules:DiagnosisRule[]=[
  {match:['apoio','ligação','ligacao'],causes:['Degradação local','Alteração construtiva ou execução deficiente','Movimentos incompatíveis entre elementos'],tests:['Inspeção detalhada do apoio/ligação','Levantamento de geometria, fixações e materiais','Verificação de transferência de esforços'],actions:['Restabelecer continuidade e apoio','Reparar/substituir fixações degradadas','Reforçar a ligação quando a verificação o exigir'],verification:'Verificar localmente a ligação e o comportamento global da estrutura.'}
 ]
 function ruleFor(f:Finding){const q=`${f.category||''} ${f.anomaly}`.toLowerCase();return diagnosisRules.find(r=>r.match.some(m=>q.includes(m)))||{match:[],causes:['Causa não determinada — requer inspeção e caracterização específica.'],tests:['Inspeção detalhada e levantamento geométrico','Ensaios adequados ao material e à anomalia'],actions:['Definir intervenção apenas depois do diagnóstico da causa.'],verification:'Associar ao módulo de cálculo adequado e verificar a solução proposta.'}}
-function DiagnosisWorkflow({findings,bimElements}:{findings:Finding[];bimElements:any[]}){
+function DiagnosisWorkflow({findings,bimElements}:{findings:Finding[];bimElements:RehabBimElement[]}){
  const [id,setId]=useState<number|null>(findings[0]?.id||null); const f=findings.find(x=>x.id===id)||findings[0]; const r=f?ruleFor(f):null; const be=f?.bimElementId?bimElements.find(x=>x.id===f.bimElementId):null
  return <><section className="panel"><small>DIAGNÓSTICO ASSISTIDO · ESTUDO PRELIMINAR</small><h2>Patologia → causa provável → ensaios → intervenção → verificação</h2><p>O SmartStruct organiza hipóteses técnicas; não transforma uma observação visual num diagnóstico definitivo. Selecione um registo e confirme as causas através de inspeção e ensaios adequados.</p><label className="diag-select">Anomalia<select value={f?.id||''} onChange={e=>setId(Number(e.target.value))}>{findings.map(x=><option key={x.id} value={x.id}>{x.element} · {x.category||x.anomaly} · {x.severity}</option>)}</select></label></section>{!f||!r?<section className="panel warning"><b>Sem registos</b><p>Registe primeiro uma anomalia no levantamento patológico.</p></section>:<><div className="diag-chain"><article><small>1 · OBSERVAÇÃO</small><b>{f.category||f.anomaly}</b><span>{f.element} · {f.severity}</span></article><article><small>2 · DIAGNÓSTICO</small><b>Causas prováveis</b><span>A confirmar</span></article><article><small>3 · ENSAIOS</small><b>Caracterização</b><span>Confirmar hipótese</span></article><article><small>4 · INTERVENÇÃO</small><b>Conservar / reparar / reforçar</b><span>Selecionar após diagnóstico</span></article><article><small>5 · VERIFICAÇÃO</small><b>Cálculo</b><span>{f.bimElementId?'Ligado ao BIM':'Associar elemento'}</span></article></div><div className="rehab-three diag-grid"><section className="panel"><h3>Causas prováveis</h3><ul>{r.causes.map(x=><li key={x}>{x}</li>)}</ul></section><section className="panel"><h3>Inspeções / ensaios recomendados</h3><ul>{r.tests.map(x=><li key={x}>{x}</li>)}</ul></section><section className="panel"><h3>Estratégias a estudar</h3><ul>{r.actions.map(x=><li key={x}>{x}</li>)}</ul></section></div><section className="panel diag-verification"><div><small>VERIFICAÇÃO ESTRUTURAL</small><h3>{r.verification}</h3><p>{be?`Elemento RJP_3D Studio associado: ${be.id} · ${be.name||be.type||'elemento estrutural'}.`:'Ainda não existe associação a um elemento RJP_3D Studio.'}</p></div><span className={f.bimElementId?'diag-status linked':'diag-status'}>{f.bimElementId?'Elemento ligado':'Ligação externa pendente'}</span></section><section className="panel rehab-principle"><b>Estado da decisão</b><span>Resultado preliminar: <strong>{f.severity==='Crítica'||f.severity==='Elevada'?'prioridade de avaliação elevada':'avaliação técnica necessária'}</strong>. A solução só deve ser fechada depois de confirmar a causa, caracterizar o elemento e verificar a segurança/durabilidade.</span></section></>}</>
 }
@@ -199,7 +200,7 @@ function MaterialPanel({kind}:{kind:MaterialKind}){
   const d=materialData[kind], opt=inspectionOptions[kind]
   const key=`smartstruct:rehab-inspection:${kind}`
   const [sheet,setSheet]=useState<InspectionSheet>(()=>{try{const x=localStorage.getItem(key);if(x)return JSON.parse(x)}catch{}return {element:'',location:'',bimElementId:'',condition:'Razoável',initialSection:100,residualSection:100,unit:opt.unit,test:opt.tests[0],measured:'',notes:''}})
-  const bim=null
+  const bimElements: RehabBimElement[] = []
   useEffect(()=>{localStorage.setItem(key,JSON.stringify(sheet))},[key,sheet])
   const residual=sheet.initialSection>0?Math.max(0,Math.min(100,100*sheet.residualSection/sheet.initialSection)):0
   return <>
@@ -214,7 +215,7 @@ function MaterialPanel({kind}:{kind:MaterialKind}){
         <label>Elemento<input value={sheet.element} onChange={e=>setSheet({...sheet,element:e.target.value})} placeholder="Viga, parede, barrote, perfil…"/></label>
         <label>Localização<input value={sheet.location} onChange={e=>setSheet({...sheet,location:e.target.value})} placeholder="Piso, compartimento, eixo…"/></label>
         <label>Estado<select value={sheet.condition} onChange={e=>setSheet({...sheet,condition:e.target.value as InspectionSheet['condition']})}><option>Bom</option><option>Razoável</option><option>Deficiente</option><option>Crítico</option></select></label>
-        <label>Elemento RJP_3D Studio<select value={sheet.bimElementId} onChange={e=>setSheet({...sheet,bimElementId:e.target.value})}><option value="">Sem associação</option>{(bim?.elements||[]).map(e=><option key={e.id} value={e.id}>{e.id} · {e.name}</option>)}</select></label>
+        <label>Elemento RJP_3D Studio<select value={sheet.bimElementId} onChange={e=>setSheet({...sheet,bimElementId:e.target.value})}><option value="">Sem associação</option>{bimElements.map(e=><option key={e.id} value={e.id}>{e.id} · {e.name}</option>)}</select></label>
         <label>Secção inicial / referência ({sheet.unit})<input type="number" min="0" step="0.1" value={sheet.initialSection} onChange={e=>setSheet({...sheet,initialSection:Number(e.target.value)})}/></label>
         <label>Secção resistente residual ({sheet.unit})<input type="number" min="0" step="0.1" value={sheet.residualSection} onChange={e=>setSheet({...sheet,residualSection:Number(e.target.value)})}/></label>
         <label>Inspeção / ensaio<select value={sheet.test} onChange={e=>setSheet({...sheet,test:e.target.value})}>{opt.tests.map(x=><option key={x}>{x}</option>)}</select></label>
