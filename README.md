@@ -14,3 +14,6 @@ Essas áreas passam para **RJP_3D Studio**.
 
 ## Ligação ao RJP_3D Studio
 Em **Structural Project PRO → Projeto**, use **Exportar para RJP_3D Studio**. O ficheiro `*.rjp3d.json` leva toda a informação estrutural disponível nesse estudo: projeto, nós, membros, materiais, envelopes de esforços, fundações, armaduras e mapa de aço.
+
+## GitHub Pages
+Workflow único: Build WebApp -> Deploy WebApp + Build Android APK. Em Settings > Pages, usar Source: GitHub Actions.
