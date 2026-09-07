@@ -1,19 +1,38 @@
-# SmartStruct RJP V116.1.2 — ENGINEERING FINAL
+## RJP 3D Studio V2.0 — Production BIM
 
-Aplicação de engenharia e cálculo. Esta edição separa a engenharia do ambiente de modelação/construção.
+Ver `README_V2_0_PRODUCTION_BIM.md`.
 
-## Mantém
-Estruturas e verificações, betão armado, aço, madeira, LSF, alvenaria, estruturas mistas, sismo, fundações, geotecnia, contenções, estabilização, hidráulica, vias, pontes, reabilitação, biblioteca técnica, relatórios e ferramentas.
+## V1.4.0 — Library+
 
-## Retirado da interface
-- Editor BIM / 3D
-- Modelo BIM
-- Planeamento e orçamento
+Ver `README_V1_4_LIBRARY_PLUS.md`.
 
-Essas áreas passam para **RJP_3D Studio**.
+# RJP 3D Studio V1.1
 
-## Ligação ao RJP_3D Studio
-Em **Structural Project PRO → Projeto**, use **Exportar para RJP_3D Studio**. O ficheiro `*.rjp3d.json` leva toda a informação estrutural disponível nesse estudo: projeto, nós, membros, materiais, envelopes de esforços, fundações, armaduras e mapa de aço.
+## IFC / openBIM
+- IFC4 passa a ser o formato principal de intercâmbio com o SmartStruct.
+- Importar IFC, exportar IFC e atualizar um modelo existente por GUID/ID.
+- O exportador inclui geometria prismática dos elementos, materiais e Property Sets RJP.
+- O importador lê diretamente IFC produzidos pelo SmartStruct/RJP 3D Studio e entidades IFC suportadas. Geometrias IFC externas arbitrárias/tesselações complexas ainda requerem um kernel IFC dedicado; a aplicação não inventa geometria.
+
+## Plantas e CAD
+PDF/imagens continuam como bases gráficas. DWG/DWF/DWFx são reconhecidos/anexados e ficam preparados para adaptador CAD desktop.
+
+## Construção
+Mantém editor 3D, biblioteca, materiais, MQT, orçamento, planeamento, autos e base de caderno técnico.
+
+## Compatibilidade
+O importador legado `*.rjp3d.json` da V1.0 continua disponível apenas para transição; IFC é o formato recomendado.
+
+## RJP Eng Hub
+Esta versão aceita `?rjpProject=<id>&projectName=<nome>` no URL como base para integração pelo Hub. A persistência remota no Drive será acrescentada quando a pasta raiz RJP_ENG estiver configurada.
 
 ## GitHub Pages
 Workflow único: Build WebApp -> Deploy WebApp + Build Android APK. Em Settings > Pages, usar Source: GitHub Actions.
+
+
+## V2.2
+Ver `README_V2_2_SMART_CAD_AUTHORING.md`.
+
+
+## V2.3
+Ver `README_V2_3_CAD_OPERATIONS.md`.
